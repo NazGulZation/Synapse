@@ -1,4 +1,5 @@
-﻿using TBG.Synapse.Repository;
+﻿using Accord.Neuro;
+using TBG.Synapse.Repository;
 using TBG.Synapse.Services;
 using TBG.Synapse.Test;
 
@@ -12,22 +13,32 @@ var connectionString = "Data Source=localhost\\SQLEXPRESS01;Initial Catalog=Syna
 #endregion
 
 #region Test LogError
-try
-{
-    throwError();
-}
-catch (Exception ex)
-{
-    Helper.LogError(ex);
-}
+//try
+//{
+//    throwError();
+//}
+//catch (Exception ex)
+//{
+//    Helper.LogError(ex);
+//}
 
-void throwError()
-{
-    throwErrorError();
-}
+//void throwError()
+//{
+//    throwErrorError();
+//}
 
-void throwErrorError()
-{
-    throw new Exception("AAA");
-}
+//void throwErrorError()
+//{
+//    throw new Exception("AAA");
+//}
 #endregion
+
+#region Test Neural Network
+//NeuralNetworkServices neuralNetworkServices = new NeuralNetworkServices();
+//Network network = neuralNetworkServices.CreateNeuralNetwork(2, 2, 1);
+//neuralNetworkServices.SaveNeuralNetwork(network, "Models", "TestModel");
+//Network loadedNetwork = neuralNetworkServices.LoadNetwork("Models", "TestModel");
+#endregion
+
+var obj = Helper.LoadCsvToJson("Dataset", "data_revenue.csv");
+var foo = "bar";
