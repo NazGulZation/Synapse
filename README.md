@@ -1,3 +1,9 @@
-# Synapse 
+# Synapse
+Synapse is a web application that allows you to create and train a Neural Network model according to the dataset you upload. It uses C# .Net Core MVC and accord.net library to provide an easy to use interface and powerful features.
 
-Synapse is a web app that enables users to create and train their own Neural Network models with ease. The app allows users to upload their own datasets and use them to build their own models quickly and efficiently.
+## Features
+
+* Upload data sets
+* Create Neural Network models
+* Train Neural Network models
+* Predict Neural Network models.
