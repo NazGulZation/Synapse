@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using Accord.Math;
 using System.Data.Common;
+using Accord.Neuro;
 
 namespace TBG.Synapse.Services
 {
@@ -19,22 +20,6 @@ namespace TBG.Synapse.Services
         {
             _logErrorRepo = new SynapseRepository<LogError>("Data Source=localhost\\SQLEXPRESS01;Initial Catalog=Synapse;Integrated Security=True;");
             _logErrorRepo.CreateTable();
-        }
-
-        private static LogError GetLogError(Exception ex)
-        {
-            var logError = new LogError();
-            logError.Message = ex.Message;
-            StackTrace stackTrace = new StackTrace(ex, true);
-            if (stackTrace.GetFrames().Count() > 0)
-            {
-                FileInfo fileInfo = new FileInfo(stackTrace.GetFrame(0).GetFileName());
-                logError.FileName = stackTrace.GetFrame(0).GetFileName();
-                logError.Line = stackTrace.GetFrame(0).GetFileLineNumber();
-                logError.Column = stackTrace.GetFrame(0).GetFileColumnNumber();
-                logError.Code = stackTrace.GetFrame(0).GetMethod().Name;
-            }
-            return logError;
         }
 
         public static object[,] ConvertJSONListToMatrix(List<JObject> data)
@@ -68,6 +53,44 @@ namespace TBG.Synapse.Services
             }
 
             return matrix;
+        }
+
+        private static LogError GetLogError(Exception ex)
+        {
+            var logError = new LogError();
+            logError.Message = ex.Message;
+            StackTrace stackTrace = new StackTrace(ex, true);
+            if (stackTrace.GetFrames().Count() > 0)
+            {
+                FileInfo fileInfo = new FileInfo(stackTrace.GetFrame(0).GetFileName());
+                logError.FileName = stackTrace.GetFrame(0).GetFileName();
+                logError.Line = stackTrace.GetFrame(0).GetFileLineNumber();
+                logError.Column = stackTrace.GetFrame(0).GetFileColumnNumber();
+                logError.Code = stackTrace.GetFrame(0).GetMethod().Name;
+            }
+            return logError;
+        }
+
+        public static double[][] GetRandomRows(double[][] val, int rows)
+        {
+            // Create a list to hold the selected rows
+            var selectedRows = new List<double[]>();
+
+            // Create a random number generator
+            var rng = new Random();
+
+            // Select the specified number of rows at random
+            for (int i = 0; i < rows; i++)
+            {
+                // Get a random index within the range of the array
+                int index = rng.Next(val.Length);
+
+                // Add the row at the randomly chosen index to the list
+                selectedRows.Add(val[index]);
+            }
+
+            // Return the list of selected rows as an array
+            return selectedRows.ToArray();
         }
 
         public static List<object> LoadCsvToJson(string directory, string filePath, List<string> columns = null)
@@ -118,7 +141,7 @@ namespace TBG.Synapse.Services
 
 
 
-        public static float[,] JsonToListFloat(List<JObject> input)
+        public static double[,] JsonToMatrixDouble(List<JObject> input)
         {
             object[,] matrix = ConvertJSONListToMatrix(input);
 
@@ -170,7 +193,7 @@ namespace TBG.Synapse.Services
                     {
                         inputString.Add((string)matrix[j, i]);
                     }
-                    float[][] encoded = OneHotEncode(inputString);
+                    double[][] encoded = OneHotEncode(inputString);
                     for (int j = 0; j < rows; j++)
                     {
                         oneHotEncoded[j, i] = encoded[j];
@@ -181,7 +204,7 @@ namespace TBG.Synapse.Services
                     // Convert the non-string column to a float column
                     for (int j = 0; j < rows; j++)
                     {
-                        oneHotEncoded[j, i] = Convert.ToSingle(matrix[j, i]);
+                        oneHotEncoded[j, i] = Convert.ToDouble(matrix[j, i]);
                     }
                 }
             }
@@ -195,21 +218,21 @@ namespace TBG.Synapse.Services
                     newCols += ((List<object>)oneHotEncoded[0, i]).Count;
             }
 
-            float[,] returnData = new float[rows, newCols];
+            double[,] returnData = new double[rows, newCols];
             // Iterate through the columns
             for (int i = 0; i < rows; i++)
             {
                 int currentCol = 0;
                 for (int j = 0; j < cols; j++)
                 {
-                    if (oneHotEncoded[i, j] is not float[])
+                    if (oneHotEncoded[i, j] is not double[])
                     {
-                        returnData[i, currentCol] = (float)oneHotEncoded[i, j];
+                        returnData[i, currentCol] = (double)oneHotEncoded[i, j];
                         currentCol++;
                     }
                     else
                     {
-                        foreach (float value in (float[])oneHotEncoded[i, j])
+                        foreach (double value in (double[])oneHotEncoded[i, j])
                         {
                             returnData[i, currentCol] = value;
                             currentCol++;
@@ -232,19 +255,19 @@ namespace TBG.Synapse.Services
             return $"Error on system with ID: {logError.ID}";
         }
 
-        public static float[][] OneHotEncode(List<string> input)
+        public static double[][] OneHotEncode(List<string> input)
         {
             // Get the unique values in the input list
             var uniqueValues = input.Distinct().ToList();
 
             // Initialize a list to hold the one-hot encoded values
-            var oneHotEncoded = new List<float[]>();
+            var oneHotEncoded = new List<double[]>();
 
             // Iterate over each value in the input list
             foreach (var value in input)
             {
                 // Initialize an array to hold the one-hot encoded values for this value
-                var row = new float[uniqueValues.Count];
+                var row = new double[uniqueValues.Count];
 
                 // Set the value for the corresponding index to 1 and the rest to 0
                 for (int i = 0; i < uniqueValues.Count; i++)

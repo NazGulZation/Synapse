@@ -44,6 +44,30 @@ namespace TBG.Synapse.Test
         }
 
         [Test]
+        public void TestGetRandomRows()
+        {
+            // Create a 2D array with 3 rows and 2 columns
+            double[][] val = new double[][]
+            {
+            new double[] { 1, 2 },
+            new double[] { 3, 4 },
+            new double[] { 5, 6 }
+            };
+
+            // Get 2 random rows from the array
+            double[][] randomRows = Helper.GetRandomRows(val, 2);
+
+            // Assert that the length of the returned array is equal to the number of rows requested
+            Assert.AreEqual(2, randomRows.Length);
+
+            // Assert that each row in the returned array is contained in the original array
+            foreach (double[] row in randomRows)
+            {
+                Assert.Contains(row, val);
+            }
+        }
+
+        [Test]
         public void JsonToList_ValidInput_ReturnsExpectedResult()
         {
             // Arrange
@@ -62,14 +86,14 @@ namespace TBG.Synapse.Test
                     { "weight", 7.5 }
                 }
             };
-            var expected = new float[2, 4]
+            var expected = new double[2, 4]
             {
-                { 1, 0, 3, 5.5f },
-                { 0, 1, 2, 7.5f }
+                { 1, 0, 3, 5.5 },
+                { 0, 1, 2, 7.5 }
             };
 
             // Act
-            var result = Helper.JsonToListFloat(json);
+            var result = Helper.JsonToMatrixDouble(json);
 
             // Assert
             Assert.AreEqual(expected, result);
