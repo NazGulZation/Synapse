@@ -4,8 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Accord.Neuro;
-using Keras.Layers;
-using Keras.Models;
 using NUnit.Framework;
 using TBG.Synapse.Services;
 
