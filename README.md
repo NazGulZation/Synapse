@@ -17,7 +17,7 @@ Synapse is a web application that allows you to create and train a Neural Networ
 
 1. Clone the repository
 ```
-git clone https://github.com/user/synapse.git
+git clone https://github.com/NazGulZation/synapse.git
 ```
 
 2. Run the application using Visual Studio 2022.
