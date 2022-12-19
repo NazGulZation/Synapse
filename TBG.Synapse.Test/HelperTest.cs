@@ -36,7 +36,7 @@ namespace TBG.Synapse.Test
         }
 
         [Test]
-        public void ConvertToMatrix()
+        public void ConvertJSONListToMatrix()
         {
             List<JObject> data = new List<JObject>
             {
@@ -63,6 +63,34 @@ namespace TBG.Synapse.Test
             object[,] result = Helper.ConvertJSONListToMatrix(data);
 
             Assert.AreEqual(expected, result);
+        }
+
+        [Test]
+        public void ConvertJSONListToMatrix_StringParseableToIntOrFloat_CorrectlyConverted()
+        {
+            // Arrange
+            List<JObject> data = new List<JObject>
+            {
+                new JObject
+                {
+                    { "column1", "1" },
+                    { "column2", "2.5" }
+                },
+                new JObject
+                {
+                    { "column1", "3" },
+                    { "column2", "4.5" }
+                }
+            };
+
+            // Act
+            object[,] matrix = Helper.ConvertJSONListToMatrix(data);
+
+            // Assert
+            Assert.AreEqual(1, matrix[0, 0]);
+            Assert.AreEqual(2.5, matrix[0, 1]);
+            Assert.AreEqual(3, matrix[1, 0]);
+            Assert.AreEqual(4.5, matrix[1, 1]);
         }
 
         [Test]
@@ -132,14 +160,14 @@ namespace TBG.Synapse.Test
             List<string> columns = new List<string> { "Name" };
 
             // Act
-            List<object> jsonObjects = Helper.LoadCsvToJson(directory, filePath, columns);
+            List<JObject> jsonObjects = Helper.LoadCsvToJson(directory, filePath, columns);
 
             // Assert
-            Assert.IsInstanceOf<List<object>>(jsonObjects);
+            Assert.IsInstanceOf<List<JObject>>(jsonObjects);
             Assert.AreEqual(2, jsonObjects.Count);
-            Assert.IsInstanceOf<Dictionary<string, string>>(jsonObjects[0]);
-            Assert.AreEqual(1, (jsonObjects[0] as Dictionary<string, string>).Count);
-            Assert.AreEqual("John", (jsonObjects[0] as Dictionary<string, string>)["Name"]);
+            Assert.IsInstanceOf<JObject>(jsonObjects[0]);
+            Assert.AreEqual(1, jsonObjects[0].Count);
+            Assert.AreEqual("John", jsonObjects[0]["Name"].ToString());
 
             // Cleanup
             File.Delete($"{directory}\\{filePath}");

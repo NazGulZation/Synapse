@@ -65,7 +65,13 @@ namespace TBG.Synapse.Services
                     }
                     else if (value.Type == JTokenType.String)
                     {
-                        matrix[i, j] = (string)value;
+                        string strValue = (string)value;
+                        if (double.TryParse(strValue, out double dValue))
+                            matrix[i, j] = dValue;
+                        else if (int.TryParse(strValue, out int intValue))
+                            matrix[i, j] = intValue;
+                        else
+                            matrix[i, j] = strValue;
                     }
                     // Add additional cases for other data types as needed
                 }
@@ -112,7 +118,7 @@ namespace TBG.Synapse.Services
             return selectedRows.ToArray();
         }
 
-        public static List<object> LoadCsvToJson(string directory, string filePath, List<string> columns = null)
+        public static List<JObject> LoadCsvToJson(string directory, string filePath, List<string> columns = null)
         {
             if (!File.Exists($"{directory}\\{filePath}"))
             {
@@ -146,7 +152,7 @@ namespace TBG.Synapse.Services
                     // Check if the current field should be included in the JSON object
                     if (columns == null || columns.Contains(fieldNames[j]))
                     {
-                        jsonObject.Add(fieldNames[j], fields[j]);
+                        jsonObject.Add(fieldNames[j].Replace("\r", ""), fields[j].Replace("\r", ""));
                     }
                 }
 
@@ -155,9 +161,8 @@ namespace TBG.Synapse.Services
             }
 
             // Return the list of JSON objects
-            return jsonObjects;
+            return jsonObjects.Select(o => JObject.FromObject(o)).ToList(); ;
         }
-
 
 
         public static double[,] JsonToMatrixDouble(List<JObject> input)
@@ -175,26 +180,12 @@ namespace TBG.Synapse.Services
             for (int i = 0; i < cols; i++)
             {
                 // Check if the current column is a string column
-                bool isStringColumn = true; // assume the current column is a string column
-                for (int j = 0; j < rows; j++)
-                {
-                    // Check if the current element is a string
-                    if (!(matrix[j, i] is string))
-                    {
-                        // If the current element is not a string, then the current column is not a string column
-                        isStringColumn = false;
-                        break; // no need to check the rest of the elements
-                    }
-                }
+                bool isStringColumn = (matrix[1, i] is string);
                 // Add the current column index to the appropriate list
                 if (isStringColumn)
-                {
                     stringCols.Add(i);
-                }
                 else
-                {
                     nonStringCols.Add(i);
-                }
             }
 
             // Create a new 2D matrix to store the converted values
@@ -228,13 +219,13 @@ namespace TBG.Synapse.Services
                 }
             }
 
-            int newCols = 1;
+            int newCols = 0;
             for (int i = 0; i < oneHotEncoded.GetLength(1); i++)
             {
-                if (oneHotEncoded[0, i] is not List<object>)
+                if (oneHotEncoded[0, i] is not double[])
                     newCols++;
                 else
-                    newCols += ((List<object>)oneHotEncoded[0, i]).Count;
+                    newCols += ((double[])oneHotEncoded[0, i]).GetLength(0);
             }
 
             double[,] returnData = new double[rows, newCols];
