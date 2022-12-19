@@ -22,6 +22,25 @@ namespace TBG.Synapse.Services
             _logErrorRepo.CreateTable();
         }
 
+        public static double CalculateAccuracy(double[][] output, double[][] expected)
+        {
+            double mse = 0;
+
+            for (int i = 0; i < output.Length; i++)
+            {
+                for (int j = 0; j < output[i].Length; j++)
+                {
+                    mse += Math.Pow(output[i][j] - expected[i][j], 2);
+                }
+            }
+
+            mse /= output.Length;
+
+            // The maximum MSE occurs when the output and expected values are completely different,
+            // so we normalize the MSE by dividing it by the maximum MSE.
+            return 100 * (1 - mse / (output[0].Length * Math.Pow(1 - (-1), 2)));
+        }
+
         public static object[,] ConvertJSONListToMatrix(List<JObject> data)
         {
             int numRows = data.Count;
@@ -255,6 +274,27 @@ namespace TBG.Synapse.Services
             return $"Error on system with ID: {logError.ID}";
         }
 
+        public static List<string> OneHotDecode(double[][] oneHotEncoded, List<string> input)
+        {
+            // Get the unique values in the input list
+            var uniqueValues = input.Distinct().ToList();
+
+            // Initialize a list to hold the decoded values
+            var decoded = new List<string>();
+
+            // Iterate over each row in the one-hot encoded array
+            foreach (var row in oneHotEncoded)
+            {
+                // Find the index of the element with the value of 1
+                int index = Array.IndexOf(row, 1);
+
+                // Add the corresponding value from the unique values list to the decoded list
+                decoded.Add(uniqueValues[index]);
+            }
+
+            return decoded;
+        }
+
         public static double[][] OneHotEncode(List<string> input)
         {
             // Get the unique values in the input list
@@ -307,6 +347,35 @@ namespace TBG.Synapse.Services
                 }
             }
 
+            return selectedColumns;
+        }
+
+        public static List<JObject> SelectJsonColumns(List<JObject> objects, string[] columns)
+        {
+            // Create a new list to hold the selected columns
+            var selectedColumns = new List<JObject>();
+
+            // Iterate through each object in the input list
+            foreach (var obj in objects)
+            {
+                // Create a new JSON object to hold the selected columns
+                var selectedObject = new JObject();
+
+                // Iterate through each column in the list of column names
+                foreach (var column in columns)
+                {
+                    // Add the specified column to the selected object, if it exists in the original object
+                    if (obj.ContainsKey(column))
+                    {
+                        selectedObject[column] = obj[column];
+                    }
+                }
+
+                // Add the selected object to the list of selected columns
+                selectedColumns.Add(selectedObject);
+            }
+
+            // Return the list of selected columns
             return selectedColumns;
         }
     }

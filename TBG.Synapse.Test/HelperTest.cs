@@ -14,6 +14,28 @@ namespace TBG.Synapse.Test
     {
 
         [Test]
+        public void CalculateAccuracy()
+        {
+            double[][] output = new double[][]
+            {
+                new double[] { 0.1, 0.9 },
+                new double[] { 0.9, 0.1 },
+                new double[] { 0.1, 0.9 }
+            };
+
+            double[][] expected = new double[][]
+            {
+                new double[] { 0, 1 },
+                new double[] { 1, 0 },
+                new double[] { 0, 1 }
+            };
+
+            double accuracy = Helper.CalculateAccuracy(output, expected);
+
+            Assert.That(accuracy, Is.EqualTo(100).Within(1.0));
+        }
+
+        [Test]
         public void ConvertToMatrix()
         {
             List<JObject> data = new List<JObject>
@@ -124,7 +146,7 @@ namespace TBG.Synapse.Test
         }
 
         [Test]
-        public void OneHotEncode_ValidInput_ReturnsExpectedResult()
+        public void OneHotEncode()
         {
             // Arrange
             var input = new List<string> { "cat", "dog", "bird", "cat", "bird" };
@@ -142,6 +164,22 @@ namespace TBG.Synapse.Test
 
             // Assert
             Assert.AreEqual(expected, result);
+        }
+
+        [Test]
+        public void OneHotDecode()
+        {
+            // Define the input data
+            var input = new List<string> { "cat", "dog", "cat", "bird", "dog" };
+
+            // Encode the input data
+            var oneHotEncoded = Helper.OneHotEncode(input);
+
+            // Decode the encoded data
+            var decoded = Helper.OneHotDecode(oneHotEncoded, input);
+
+            // Assert that the decoded data is equal to the original input data
+            CollectionAssert.AreEqual(input, decoded);
         }
 
         [Test]
@@ -174,6 +212,51 @@ namespace TBG.Synapse.Test
             Assert.AreEqual(11, selectedColumns[2, 0]);
             Assert.AreEqual(13, selectedColumns[2, 1]);
             Assert.AreEqual(15, selectedColumns[2, 2]);
+        }
+
+        [Test]
+        public void SelectJsonColumns()
+        {
+            // Arrange
+            var objects = new List<JObject>
+            {
+                new JObject
+                {
+                    { "ID", 1 },
+                    { "Name", "John" },
+                    { "Age", 30 }
+                },
+                new JObject
+                {
+                    { "ID", 2 },
+                    { "Name", "Jane" },
+                    { "Age", 25 }
+                }
+            };
+
+            var expected = new List<JObject>
+            {
+                new JObject
+                {
+                    { "ID", 1 },
+                    { "Name", "John" }
+                },
+                new JObject
+                {
+                    { "ID", 2 },
+                    { "Name", "Jane" }
+                }
+            };
+
+            // Act
+            var selectedColumns = Helper.SelectJsonColumns(objects, new string[] { "ID", "Name" });
+
+            // Assert
+            Assert.AreEqual(expected.Count, selectedColumns.Count);
+            for (int i = 0; i < expected.Count; i++)
+            {
+                Assert.AreEqual(expected[i], selectedColumns[i]);
+            }
         }
 
     }

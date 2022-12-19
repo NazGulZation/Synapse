@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Accord.Math;
 using Accord.Neuro;
 using NUnit.Framework;
 using TBG.Synapse.Services;
@@ -84,6 +85,51 @@ namespace TBG.Synapse.Test
 
             // delete the test directory and its contents
             Directory.Delete(directory, true);
+        }
+
+        [Test]
+        public static void TrainNetwork_ReturnsTrainedNetwork()
+        {
+            // Arrange
+            NeuralNetworkServices neuralNetworkServices = new NeuralNetworkServices();
+
+            int x = 2;
+            int y = 3;
+            int z = 1;
+            double accuracy = 99.9;
+            double[,] input =
+            {
+                { 0, 0 },
+                { 0, 1 },
+                { 1, 0 },
+                { 1, 1 }
+            };
+            double[,] target =
+            {
+                { 0 },
+                { 1 },
+                { 1 },
+                { 0 }
+            };
+            double[,] validationInput =
+            {
+                { 1, 0 },
+                { 1, 1 }
+            };
+            double[,] validationOutput =
+            {
+                { 1 },
+                { 0 }
+            };
+
+            // Act
+            Network network = neuralNetworkServices.CreateNeuralNetwork(x, y, z);
+            Network trainedNetwork = neuralNetworkServices.TrainNetwork(network, input, target, 
+                validationInput, validationOutput, accuracy);
+
+            // Assert
+            Assert.IsNotNull(trainedNetwork);
+            Assert.IsInstanceOf<ActivationNetwork>(trainedNetwork);
         }
     }
 }

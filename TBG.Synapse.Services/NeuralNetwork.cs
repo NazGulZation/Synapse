@@ -4,36 +4,12 @@ using Accord.Neuro;
 using Accord.Neuro.ActivationFunctions;
 using Accord.Neuro.Learning;
 using Accord.Statistics.Kernels;
+using Newtonsoft.Json.Linq;
 
 namespace TBG.Synapse.Services
 {
     public class NeuralNetworkServices
     {
-        public double CalculateAccuracy(Network network, double[][] input, double[][] output)
-        {
-            // Initialize a counter for the number of correct predictions
-            int correct = 0;
-
-            // Iterate through each data point in the validation set
-            for (int i = 0; i < input.Length; i++)
-            {
-                // Make a prediction with the neural network
-                double[] prediction = network.Compute(input[i]);
-
-                // Calculate the error between the prediction and the output
-                double error = output[i].Subtract(prediction).Abs().Sum();
-
-                // If the error is below a certain threshold, consider the prediction correct
-                if (error < 0.1)
-                {
-                    correct++;
-                }
-            }
-
-            // Return the approximate accuracy as a percentage
-            return (double)correct / input.Length * 100;
-        }
-
         public Network CreateNeuralNetwork(int x, int y, int z)
         {
 
@@ -70,11 +46,12 @@ namespace TBG.Synapse.Services
             return network;
         }
 
-        public Network TrainNetwork(Network network, double[,] input, double[,] output, double[,] validation)
+        public Network TrainNetwork(Network network, double[,] input, double[,] target, double[,] validationInput, double[,] validationOutput, double targetAccuracy)
         {
             double[][] jaggedInput = Matrix.Create(input).ToJagged();
-            double[][] jaggedOutput = Matrix.Create(output).ToJagged();
-            double[][] jaggedValidation = Matrix.Create(validation).ToJagged();
+            double[][] jaggedTarget = Matrix.Create(target).ToJagged();
+            double[][] jaggedValidationInput = Matrix.Create(validationInput).ToJagged();
+            double[][] jaggedValidationOutput = Matrix.Create(validationOutput).ToJagged();
 
             // Create a new backpropagation learning algorithm
             var teacher = new BackPropagationLearning((ActivationNetwork)network);
@@ -87,10 +64,21 @@ namespace TBG.Synapse.Services
             teacher.LearningRate = 0.01;
 
             double accuracy = 0;
-            while (accuracy < 80)
+            while (accuracy < targetAccuracy)
             {
-                teacher.RunEpoch(jaggedInput, jaggedOutput);
-                accuracy = CalculateAccuracy(network, jaggedInput, jaggedValidation);
+                teacher.RunEpoch(jaggedInput, jaggedTarget);
+
+                double[][] jaggedOutput = new double[validationOutput.GetLength(0)][];
+                for (int i = 0; i < validationInput.GetLength(0); i++)
+                {
+                    double[] row = Enumerable.Range(0, validationInput.GetLength(1))
+                        .Select(colIndex => validationInput[i, colIndex])
+                        .ToArray();
+                    double[] rowOutput = network.Compute(row);
+                    jaggedOutput[i] = rowOutput;
+                }
+
+                accuracy = Helper.CalculateAccuracy(jaggedOutput, jaggedValidationOutput);
             }
 
             // Return the trained network

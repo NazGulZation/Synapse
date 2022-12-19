@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Data;
 using System.Linq;
 
 using NUnit.Framework;
@@ -10,16 +12,16 @@ namespace TBG.Synapse.Test
     [TestFixture]
     public static class RepoTest
     {
-        readonly static string connectionString;
+        readonly private static string _connectionString;
         static RepoTest()
         {
-            connectionString = "Data Source=localhost\\SQLEXPRESS01;Initial Catalog=Synapse;Integrated Security=True;";
+            _connectionString = "Data Source=localhost\\SQLEXPRESS01;Initial Catalog=Synapse;Integrated Security=True;";
         }
 
         [Test]
         public static void TestCreate()
         {
-            var rep = new SynapseRepository<EmployeeTest>(connectionString);
+            var rep = new SynapseRepository<EmployeeTest>(_connectionString);
 
             rep.CreateTableIdentity();
 
@@ -42,7 +44,7 @@ namespace TBG.Synapse.Test
         [Test]
         public static void TestInsert()
         {
-            var rep = new SynapseRepository<EmployeeTest>(connectionString);
+            var rep = new SynapseRepository<EmployeeTest>(_connectionString);
 
             var employee = new EmployeeTest
             {
@@ -63,7 +65,7 @@ namespace TBG.Synapse.Test
         [Test]
         public static void TestUpdate()
         {
-            var rep = new SynapseRepository<EmployeeTest>(connectionString);
+            var rep = new SynapseRepository<EmployeeTest>(_connectionString);
 
             var employee = new EmployeeTest
             {
@@ -89,7 +91,7 @@ namespace TBG.Synapse.Test
         [Test]
         public static void TestDelete()
         {
-            var rep = new SynapseRepository<EmployeeTest>(connectionString);
+            var rep = new SynapseRepository<EmployeeTest>(_connectionString);
 
             var employee = new EmployeeTest
             {
@@ -108,5 +110,24 @@ namespace TBG.Synapse.Test
 
             Assert.IsNull(deletedEmployee);
         }
+
+        [Test]
+        public static void ExecuteSqlQuery()
+        {
+            string createTableSql = @"
+                CREATE TABLE TempCustomers (
+                    CustomerId INT PRIMARY KEY,
+                    CustomerName NVARCHAR(50)
+                )
+            ";
+            string dropTableSql = "DROP TABLE TempCustomers";
+
+            using (IDbConnection connection = new SqlConnection(_connectionString))
+            {
+                SynapseRepository.ExecuteSqlQuery(createTableSql, connection);
+                SynapseRepository.ExecuteSqlQuery(dropTableSql, connection);
+            }
+        }
+
     }
 }

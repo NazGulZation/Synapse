@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using System.Data;
 using System.Data.SqlClient;
 using System.Reflection;
 
@@ -38,13 +39,13 @@ namespace TBG.Synapse.Repository
         {
             using (var connection = new SqlConnection(_connectionString))
             {
+                connection.Open();
                 Insert(connection, item);
             }
         }
 
         public void Insert(SqlConnection connection, T item)
         {
-            connection.Open();
             var properties = typeof(T).GetProperties();
             var columns = string.Join(", ", properties.Select(p => $"[{p.Name}]"));
             var values = string.Join(", ", properties.Select(p => $"@{p.Name}"));
@@ -57,13 +58,13 @@ namespace TBG.Synapse.Repository
         {
             using (var connection = new SqlConnection(_connectionString))
             {
+                connection.Open();
                 Insert(connection, items);
             }
         }
 
         public void Insert(SqlConnection connection, IEnumerable<T> items)
         {
-            connection.Open();
             var properties = typeof(T).GetProperties();
             var columns = string.Join(", ", properties.Select(p => $"[{p.Name}]"));
             var values = string.Join(", ", properties.Select(p => $"@{p.Name}"));
@@ -74,9 +75,16 @@ namespace TBG.Synapse.Repository
         #endregion
 
         #region Insert Identity
+        public int InsertIdentity(T item)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                return InsertIdentity(connection, item);
+            }
+        }
         public int InsertIdentity(SqlConnection connection, T item)
         {
-            connection.Open();
             var properties = typeof(T).GetProperties();
             var columns = string.Join(", ", properties
                 .Where(p => p.GetCustomAttributes(typeof(PrimaryKeyAttribute), false).Length == 0)
@@ -90,17 +98,17 @@ namespace TBG.Synapse.Repository
             return id;
         }
 
-        public int InsertIdentity(T item)
+        public IEnumerable<int> InsertIdentity(IEnumerable<T> items)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                return InsertIdentity(connection, item);
+                connection.Open();
+                return InsertIdentity(connection, items);
             }
         }
 
         public IEnumerable<int> InsertIdentity(SqlConnection connection, IEnumerable<T> items)
         {
-            connection.Open();
             var properties = typeof(T).GetProperties();
             var columns = string.Join(", ", properties
                 .Where(p => p.GetCustomAttributes(typeof(PrimaryKeyAttribute), false).Length == 0)
@@ -114,14 +122,6 @@ namespace TBG.Synapse.Repository
             var ids = connection.Query<int>(sql, items);
             return ids;
         }
-
-        public IEnumerable<int> InsertIdentity(IEnumerable<T> items)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                return InsertIdentity(connection, items);
-            }
-        }
         #endregion
 
         #region Update
@@ -129,13 +129,13 @@ namespace TBG.Synapse.Repository
         {
             using (var connection = new SqlConnection(_connectionString))
             {
+                connection.Open();
                 Update(connection, item);
             }
         }
 
         public void Update(SqlConnection connection, T item)
         {
-            connection.Open();
             var properties = typeof(T).GetProperties();
             var updates = string.Join(", ", properties
                 .Where(p => p.GetCustomAttributes(typeof(PrimaryKeyAttribute), false).Length == 0)
@@ -150,13 +150,13 @@ namespace TBG.Synapse.Repository
         {
             using (var connection = new SqlConnection(_connectionString))
             {
+                connection.Open();
                 Update(connection, items);
             }
         }
 
         public void Update(SqlConnection connection, IEnumerable<T> items)
         {
-            connection.Open();
             var properties = typeof(T).GetProperties();
             var updates = string.Join(", ", properties
                 .Where(p => p.GetCustomAttributes(typeof(PrimaryKeyAttribute), false).Length == 0)
@@ -173,13 +173,13 @@ namespace TBG.Synapse.Repository
         {
             using (var connection = new SqlConnection(_connectionString))
             {
+                connection.Open();
                 Delete(connection, item);
             }
         }
 
         public void Delete(SqlConnection connection, T item)
         {
-            connection.Open();
             var properties = typeof(T).GetProperties();
             var primaryKey = $"{properties.Single(p => p.GetCustomAttributes(typeof(PrimaryKeyAttribute), false).Length > 0).Name}";
             var tableName = typeof(T).Name;
@@ -191,13 +191,13 @@ namespace TBG.Synapse.Repository
         {
             using (var connection = new SqlConnection(_connectionString))
             {
+                connection.Open();
                 Delete(connection, items);
             }
         }
 
         public void Delete(SqlConnection connection, IEnumerable<T> items)
         {
-            connection.Open();
             var properties = typeof(T).GetProperties();
             var primaryKey = $"{properties.Single(p => p.GetCustomAttributes(typeof(PrimaryKeyAttribute), false).Length > 0).Name}";
             var tableName = typeof(T).Name;
@@ -211,13 +211,13 @@ namespace TBG.Synapse.Repository
         {
             using (var connection = new SqlConnection(_connectionString))
             {
+                connection.Open();
                 return Get(connection, where, orderBy);
             }
         }
 
         public IEnumerable<T> Get(SqlConnection connection, string where = "", string orderBy = "")
         {
-            connection.Open();
             var tableName = typeof(T).Name;
             var sql = $"SELECT * FROM {tableName}";
             if (!string.IsNullOrWhiteSpace(where))
@@ -231,6 +231,22 @@ namespace TBG.Synapse.Repository
             return connection.Query<T>(sql);
         }
         #endregion GET
+
+        #region GET
+        public IEnumerable<T> GetFromSP(string storedProcedureName, object parameters = null)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                return GetFromSP(connection, storedProcedureName, parameters);
+            }
+        }
+
+        public IEnumerable<T> GetFromSP(SqlConnection connection, string storedProcedureName, object parameters = null)
+        {
+            return connection.Query<T>(storedProcedureName, parameters, commandType: CommandType.StoredProcedure);
+        }
+        #endregion
 
         #region Create Table
         public void CreateTable()
@@ -299,5 +315,36 @@ namespace TBG.Synapse.Repository
             return returnString;
         }
         #endregion
+    }
+
+    public static class SynapseRepository
+    {
+        public static void ExecuteSqlQuery(string sqlQuery, string connectionString)
+        {
+            using (IDbConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                ExecuteSqlQuery(sqlQuery, connection);
+            }
+        }
+
+        public static void ExecuteSqlQuery(string sqlQuery, IDbConnection connection)
+        {
+            connection.Execute(sqlQuery);
+        }
+
+        public static void ExecuteStoredProcedure(string storedProcedureName, DynamicParameters parameters, string connectionString)
+        {
+            using (IDbConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                ExecuteStoredProcedure(storedProcedureName, parameters, connection);
+            }
+        }
+
+        public static void ExecuteStoredProcedure(string storedProcedureName, DynamicParameters parameters, IDbConnection connection)
+        {
+            connection.Execute(storedProcedureName, parameters, commandType: CommandType.StoredProcedure);
+        }
     }
 }
